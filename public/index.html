@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FHEVM 机密游戏系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .nav-bar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .wallet-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .card h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #718096 0%, #4a5568 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #f0fff4;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .status.error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+
+        .status.info {
+            background: #ebf8ff;
+            color: #2a4365;
+            border: 1px solid #90cdf4;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .game-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .game-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .game-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .game-status.active {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .game-status.ended {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .game-status.waiting {
+            background: #fef5e7;
+            color: #744210;
+        }
+
+        .game-details {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .detail-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .detail-value {
+            color: #2d3748;
+            font-weight: 500;
+        }
+
+        .score-highlight {
+            color: #667eea;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .player-stats {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        .leaderboard {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            transition: background-color 0.3s ease;
+        }
+
+        .leaderboard-item:hover {
+            background: #f7fafc;
+        }
+
+        .leaderboard-item:last-child {
+            border-bottom: none;
+        }
+
+        .rank {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #667eea;
+            min-width: 30px;
+        }
+
+        .rank.gold {
+            color: #ffd700;
+        }
+
+        .rank.silver {
+            color: #c0c0c0;
+        }
+
+        .rank.bronze {
+            color: #cd7f32;
+        }
+
+        .player-name {
+            flex: 1;
+            margin-left: 15px;
+            font-weight: 600;
+        }
+
+        .player-score {
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .achievement {
+            background: linear-gradient(135deg, #ffd89b 0%, #19547b 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 5px;
+            display: inline-block;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 5px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .game-controls {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .score-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .score-input input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .nav-bar {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .wallet-section {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .score-input {
+                flex-direction: column;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 FHEVM 机密游戏系统</h1>
+            <p>基于完全同态加密的隐私保护游戏平台</p>
+        </div>
+
+        <div class="nav-bar">
+            <div class="nav-links">
+                <a href="/">🏠 首页</a>
+                <a href="/voting">🗳️ 投票系统</a>
+                <a href="/auction">🏛️ 拍卖平台</a>
+                <a href="/factory">🏭 合约工厂</a>
+            </div>
+            <div class="wallet-section">
+                <button id="connectWallet" class="btn">连接钱包</button>
+                <span id="walletAddress" class="hidden"></span>
+            </div>
+        </div>
+
+        <div id="status" class="status hidden"></div>
+
+        <!-- 玩家信息 -->
+        <div id="playerInfo" class="card hidden">
+            <h2>👤 玩家信息</h2>
+            <div class="player-stats">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalGames">0</div>
+                        <div class="stat-label">总游戏数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalScore">0</div>
+                        <div class="stat-label">总分数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="averageScore">0</div>
+                        <div class="stat-label">平均分数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="highestScore">0</div>
+                        <div class="stat-label">最高分数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="playerRank">-</div>
+                        <div class="stat-label">排名</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="achievementCount">0</div>
+                        <div class="stat-label">成就数量</div>
+                    </div>
+                </div>
+                <div id="playerAchievements" style="margin-top: 15px;">
+                    <!-- 成就将在这里显示 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 主要内容区域 -->
+        <div class="card">
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('play')">🎮 游戏大厅</div>
+                <div class="tab" onclick="switchTab('sessions')">📊 游戏记录</div>
+                <div class="tab" onclick="switchTab('leaderboard')">🏆 排行榜</div>
+                <div class="tab" onclick="switchTab('admin')">⚙️ 管理</div>
+            </div>
+
+            <!-- 游戏大厅 -->
+            <div id="play" class="tab-content active">
+                <h2>游戏大厅</h2>
+                
+                <div class="game-controls">
+                    <h3>开始新游戏</h3>
+                    <div class="form-group">
+                        <label for="gameType">游戏类型:</label>
+                        <select id="gameType">
+                            <option value="puzzle">益智游戏</option>
+                            <option value="action">动作游戏</option>
+                            <option value="strategy">策略游戏</option>
+                            <option value="arcade">街机游戏</option>
+                        </select>
+                    </div>
+                    <button id="startGame" class="btn">开始游戏</button>
+                </div>
+
+                <div id="activeGameSession" class="hidden">
+                    <h3>当前游戏会话</h3>
+                    <div class="game-details">
+                        <div class="detail-row">
+                            <span class="detail-label">会话ID:</span>
+                            <span class="detail-value" id="currentSessionId">-</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">游戏类型:</span>
+                            <span class="detail-value" id="currentGameType">-</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">开始时间:</span>
+                            <span class="detail-value" id="currentStartTime">-</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">当前分数:</span>
+                            <span class="detail-value score-highlight" id="currentScore">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="score-input">
+                        <input type="number" id="scoreInput" placeholder="输入分数" min="0">
+                        <button id="submitScore" class="btn">提交分数</button>
+                        <button id="endGame" class="btn btn-danger">结束游戏</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 游戏记录 -->
+            <div id="sessions" class="tab-content">
+                <h2>游戏记录</h2>
+                <div class="form-group">
+                    <button id="loadSessions" class="btn btn-secondary">刷新记录</button>
+                </div>
+                <div id="sessionsList" class="grid">
+                    <!-- 游戏记录将在这里显示 -->
+                </div>
+            </div>
+
+            <!-- 排行榜 -->
+            <div id="leaderboard" class="tab-content">
+                <h2>排行榜</h2>
+                <div class="form-group">
+                    <button id="loadLeaderboard" class="btn btn-secondary">刷新排行榜</button>
+                </div>
+                <div class="leaderboard" id="leaderboardList">
+                    <!-- 排行榜将在这里显示 -->
+                </div>
+            </div>
+
+            <!-- 管理面板 -->
+            <div id="admin" class="tab-content">
+                <h2>管理面板</h2>
+                
+                <div id="adminPanel" class="hidden">
+                    <h3>管理员功能</h3>
+                    <div class="form-group">
+                        <label for="adminAddress">添加管理员:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="adminAddress" placeholder="管理员地址">
+                            <button id="addAdmin" class="btn btn-secondary">添加</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="achievementPlayer">解锁成就:</label>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <input type="text" id="achievementPlayer" placeholder="玩家地址">
+                            <input type="text" id="achievementName" placeholder="成就名称">
+                        </div>
+                        <button id="unlockAchievement" class="btn btn-success">解锁成就</button>
+                    </div>
+                </div>
+                
+                <h3>系统统计</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalPlayers">0</div>
+                        <div class="stat-label">总玩家数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalSessions">0</div>
+                        <div class="stat-label">总游戏会话</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="activeSessions">0</div>
+                        <div class="stat-label">活跃会话</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalAchievements">0</div>
+                        <div class="stat-label">总成就数</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="https://unpkg.com/fhevmjs@0.3.3/bundle/index.js"></script>
+    <script>
+        let provider, signer, contract, fhevmInstance;
+        let userAddress = null;
+        let isAdmin = false;
+        let currentSessionId = null;
+
+        // 合约配置
+        let CONTRACT_ADDRESS = ''; // 将在部署后填入
+        const CONTRACT_ABI = [
+            // GamingSystem ABI
+            "function owner() view returns (address)",
+            "function isAdmin(address) view returns (bool)",
+            "function isRegistered(address) view returns (bool)",
+            "function sessionCount() view returns (uint256)",
+            "function addAdmin(address admin) external",
+            "function registerPlayer() external",
+            "function startGameSession(string memory gameType) external returns (uint256)",
+            "function submitScore(uint256 sessionId, bytes32 encryptedScore, bytes calldata inputProof) external",
+            "function endGameSession(uint256 sessionId) external",
+            "function getGameSession(uint256 sessionId) view returns (tuple(uint256 id, address player, string gameType, uint256 startTime, uint256 endTime, bool isActive))",
+            "function getPlayerStats(address player) view returns (tuple(uint256 totalGames, uint256 totalScore, uint256 averageScore, uint256 highestScore))",
+            "function getPlayerRank(address player) view returns (uint256)",
+            "function getLeaderboardSize() view returns (uint256)",
+            "function getLeaderboardEntry(uint256 index) view returns (address player, uint256 score)",
+            "function compareScores(address player1, address player2) view returns (bool)",
+            "function unlockAchievement(address player, string memory achievementName) external",
+            "function getPlayerAchievements(address player) view returns (string[] memory)",
+            "function hasActiveSession(address player) view returns (bool)",
+            "function getActiveSessionId(address player) view returns (uint256)",
+            "event PlayerRegistered(address indexed player)",
+            "event GameSessionStarted(uint256 indexed sessionId, address indexed player, string gameType)",
+            "event ScoreSubmitted(uint256 indexed sessionId, address indexed player, uint256 timestamp)",
+            "event GameSessionEnded(uint256 indexed sessionId, address indexed player, uint256 endTime)",
+            "event AchievementUnlocked(address indexed player, string achievementName)"
+        ];
+
+        // 初始化
+        async function init() {
+            try {
+                await loadConfig();
+                await initializeFHEVM();
+                setupEventListeners();
+                showStatus('系统初始化完成', 'info');
+            } catch (error) {
+                console.error('初始化失败:', error);
+                showStatus('系统初始化失败: ' + error.message, 'error');
+            }
+        }
+
+        // 加载配置
+        async function loadConfig() {
+            try {
+                const response = await fetch('/config.json');
+                const config = await response.json();
+                CONTRACT_ADDRESS = config.contracts.GamingSystem;
+            } catch (error) {
+                console.warn('无法加载配置文件，使用默认设置');
+            }
+        }
+
+        // 初始化FHEVM
+        async function initializeFHEVM() {
+            try {
+                fhevmInstance = await fhevm.createInstance({
+                    chainId: 31337,
+                    networkUrl: 'http://localhost:8545',
+                    gatewayUrl: 'http://localhost:8545'
+                });
+                console.log('FHEVM实例初始化成功');
+            } catch (error) {
+                console.error('FHEVM初始化失败:', error);
+                throw error;
+            }
+        }
+
+        // 连接钱包
+        async function connectWallet() {
+            try {
+                if (typeof window.ethereum === 'undefined') {
+                    throw new Error('请安装MetaMask钱包');
+                }
+
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                userAddress = await signer.getAddress();
+
+                if (CONTRACT_ADDRESS) {
+                    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+                    await checkUserRole();
+                    await checkRegistration();
+                }
+
+                updateWalletUI();
+                await loadPlayerInfo();
+                showStatus('钱包连接成功', 'success');
+            } catch (error) {
+                console.error('钱包连接失败:', error);
+                showStatus('钱包连接失败: ' + error.message, 'error');
+            }
+        }
+
+        // 检查用户角色
+        async function checkUserRole() {
+            try {
+                isAdmin = await contract.isAdmin(userAddress);
+                
+                if (isAdmin) {
+                    document.getElementById('adminPanel').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('检查用户角色失败:', error);
+            }
+        }
+
+        // 检查注册状态
+        async function checkRegistration() {
+            try {
+                const isRegistered = await contract.isRegistered(userAddress);
+                
+                if (!isRegistered) {
+                    const shouldRegister = confirm('您还未注册为玩家，是否现在注册？');
+                    if (shouldRegister) {
+                        await registerPlayer();
+                    }
+                }
+            } catch (error) {
+                console.error('检查注册状态失败:', error);
+            }
+        }
+
+        // 注册玩家
+        async function registerPlayer() {
+            try {
+                showStatus('正在注册玩家...', 'info');
+                
+                const tx = await contract.registerPlayer();
+                await tx.wait();
+                
+                showStatus('玩家注册成功', 'success');
+            } catch (error) {
+                console.error('注册玩家失败:', error);
+                showStatus('注册玩家失败: ' + error.message, 'error');
+            }
+        }
+
+        // 更新钱包UI
+        function updateWalletUI() {
+            const connectBtn = document.getElementById('connectWallet');
+            const addressSpan = document.getElementById('walletAddress');
+            
+            if (userAddress) {
+                connectBtn.textContent = '已连接';
+                connectBtn.disabled = true;
+                addressSpan.textContent = `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`;
+                addressSpan.classList.remove('hidden');
+                document.getElementById('playerInfo').classList.remove('hidden');
+            }
+        }
+
+        // 加载玩家信息
+        async function loadPlayerInfo() {
+            if (!contract || !userAddress) return;
+
+            try {
+                const stats = await contract.getPlayerStats(userAddress);
+                const rank = await contract.getPlayerRank(userAddress);
+                const achievements = await contract.getPlayerAchievements(userAddress);
+                
+                document.getElementById('totalGames').textContent = stats.totalGames.toString();
+                document.getElementById('totalScore').textContent = stats.totalScore.toString();
+                document.getElementById('averageScore').textContent = stats.averageScore.toString();
+                document.getElementById('highestScore').textContent = stats.highestScore.toString();
+                document.getElementById('playerRank').textContent = rank.eq(0) ? '-' : rank.toString();
+                document.getElementById('achievementCount').textContent = achievements.length.toString();
+                
+                // 显示成就
+                const achievementsDiv = document.getElementById('playerAchievements');
+                achievementsDiv.innerHTML = '';
+                achievements.forEach(achievement => {
+                    const achievementSpan = document.createElement('span');
+                    achievementSpan.className = 'achievement';
+                    achievementSpan.textContent = achievement;
+                    achievementsDiv.appendChild(achievementSpan);
+                });
+                
+                // 检查是否有活跃会话
+                const hasActive = await contract.hasActiveSession(userAddress);
+                if (hasActive) {
+                    currentSessionId = await contract.getActiveSessionId(userAddress);
+                    await loadActiveSession();
+                }
+                
+                // 加载系统统计
+                await loadSystemStats();
+            } catch (error) {
+                console.error('加载玩家信息失败:', error);
+            }
+        }
+
+        // 加载活跃会话
+        async function loadActiveSession() {
+            if (!currentSessionId) return;
+            
+            try {
+                const session = await contract.getGameSession(currentSessionId);
+                
+                document.getElementById('currentSessionId').textContent = currentSessionId.toString();
+                document.getElementById('currentGameType').textContent = session.gameType;
+                document.getElementById('currentStartTime').textContent = new Date(session.startTime * 1000).toLocaleString();
+                document.getElementById('currentScore').textContent = '***'; // 加密分数
+                
+                document.getElementById('activeGameSession').classList.remove('hidden');
+                document.getElementById('startGame').disabled = true;
+            } catch (error) {
+                console.error('加载活跃会话失败:', error);
+            }
+        }
+
+        // 开始游戏
+        async function startGame() {
+            if (!contract || !userAddress) {
+                showStatus('请先连接钱包', 'error');
+                return;
+            }
+
+            const gameType = document.getElementById('gameType').value;
+            
+            try {
+                showStatus('正在开始游戏...', 'info');
+                
+                const tx = await contract.startGameSession(gameType);
+                const receipt = await tx.wait();
+                
+                // 从事件中获取会话ID
+                const event = receipt.events.find(e => e.event === 'GameSessionStarted');
+                if (event) {
+                    currentSessionId = event.args.sessionId;
+                    await loadActiveSession();
+                }
+                
+                showStatus('游戏开始成功', 'success');
+            } catch (error) {
+                console.error('开始游戏失败:', error);
+                showStatus('开始游戏失败: ' + error.message, 'error');
+            }
+        }
+
+        // 提交分数
+        async function submitScore() {
+            if (!contract || !userAddress || !currentSessionId) {
+                showStatus('没有活跃的游戏会话', 'error');
+                return;
+            }
+
+            const score = document.getElementById('scoreInput').value;
+            if (!score || parseInt(score) < 0) {
+                showStatus('请输入有效的分数', 'error');
+                return;
+            }
+
+            try {
+                showStatus('正在提交分数...', 'info');
+                
+                // 加密分数
+                const encryptedScore = fhevmInstance.encrypt32(parseInt(score));
+                
+                const tx = await contract.submitScore(
+                    currentSessionId,
+                    encryptedScore.handles[0],
+                    encryptedScore.inputProof
+                );
+                
+                await tx.wait();
+                showStatus('分数提交成功', 'success');
+                
+                // 清空输入框
+                document.getElementById('scoreInput').value = '';
+                
+                // 更新当前分数显示
+                document.getElementById('currentScore').textContent = '***';
+            } catch (error) {
+                console.error('提交分数失败:', error);
+                showStatus('提交分数失败: ' + error.message, 'error');
+            }
+        }
+
+        // 结束游戏
+        async function endGame() {
+            if (!contract || !userAddress || !currentSessionId) {
+                showStatus('没有活跃的游戏会话', 'error');
+                return;
+            }
+
+            try {
+                showStatus('正在结束游戏...', 'info');
+                
+                const tx = await contract.endGameSession(currentSessionId);
+                await tx.wait();
+                
+                showStatus('游戏结束成功', 'success');
+                
+                // 重置UI
+                currentSessionId = null;
+                document.getElementById('activeGameSession').classList.add('hidden');
+                document.getElementById('startGame').disabled = false;
+                
+                // 刷新玩家信息
+                await loadPlayerInfo();
+            } catch (error) {
+                console.error('结束游戏失败:', error);
+                showStatus('结束游戏失败: ' + error.message, 'error');
+            }
+        }
+
+        // 加载游戏记录
+        async function loadSessions() {
+            if (!contract || !userAddress) {
+                showStatus('请先连接钱包', 'error');
+                return;
+            }
+
+            try {
+                showStatus('正在加载游戏记录...', 'info');
+                
+                const sessionCount = await contract.sessionCount();
+                const sessionsList = document.getElementById('sessionsList');
+                sessionsList.innerHTML = '';
+
+                if (sessionCount.eq(0)) {
+                    sessionsList.innerHTML = '<p>暂无游戏记录</p>';
+                    return;
+                }
+
+                let userSessions = [];
+                for (let i = 0; i < sessionCount.toNumber(); i++) {
+                    const session = await contract.getGameSession(i);
+                    if (session.player.toLowerCase() === userAddress.toLowerCase()) {
+                        userSessions.push({ ...session, id: i });
+                    }
+                }
+
+                if (userSessions.length === 0) {
+                    sessionsList.innerHTML = '<p>您还没有游戏记录</p>';
+                    return;
+                }
+
+                userSessions.reverse().forEach(session => {
+                    const sessionCard = createSessionCard(session);
+                    sessionsList.appendChild(sessionCard);
+                });
+
+                showStatus('游戏记录加载完成', 'success');
+            } catch (error) {
+                console.error('加载游戏记录失败:', error);
+                showStatus('加载游戏记录失败: ' + error.message, 'error');
+            }
+        }
+
+        // 创建游戏记录卡片
+        function createSessionCard(session) {
+            const card = document.createElement('div');
+            card.className = 'game-card';
+            
+            const statusClass = session.isActive ? 'active' : 'ended';
+            const statusText = session.isActive ? '进行中' : '已结束';
+            
+            card.innerHTML = `
+                <div class="game-header">
+                    <div class="game-title">游戏会话 #${session.id}</div>
+                    <div class="game-status ${statusClass}">${statusText}</div>
+                </div>
+                <div class="game-details">
+                    <div class="detail-row">
+                        <span class="detail-label">游戏类型:</span>
+                        <span class="detail-value">${session.gameType}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">开始时间:</span>
+                        <span class="detail-value">${new Date(session.startTime * 1000).toLocaleString()}</span>
+                    </div>
+                    ${!session.isActive ? `
+                        <div class="detail-row">
+                            <span class="detail-label">结束时间:</span>
+                            <span class="detail-value">${new Date(session.endTime * 1000).toLocaleString()}</span>
+                        </div>
+                    ` : ''}
+                    <div class="detail-row">
+                        <span class="detail-label">分数:</span>
+                        <span class="detail-value score-highlight">*** (加密)</span>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // 加载排行榜
+        async function loadLeaderboard() {
+            if (!contract) {
+                showStatus('请先连接钱包', 'error');
+                return;
+            }
+
+            try {
+                showStatus('正在加载排行榜...', 'info');
+                
+                const leaderboardSize = await contract.getLeaderboardSize();
+                const leaderboardList = document.getElementById('leaderboardList');
+                leaderboardList.innerHTML = '';
+
+                if (leaderboardSize.eq(0)) {
+                    leaderboardList.innerHTML = '<p>排行榜暂无数据</p>';
+                    return;
+                }
+
+                for (let i = 0; i < Math.min(leaderboardSize.toNumber(), 10); i++) {
+                    const entry = await contract.getLeaderboardEntry(i);
+                    const item = createLeaderboardItem(i + 1, entry.player, entry.score);
+                    leaderboardList.appendChild(item);
+                }
+
+                showStatus('排行榜加载完成', 'success');
+            } catch (error) {
+                console.error('加载排行榜失败:', error);
+                showStatus('加载排行榜失败: ' + error.message, 'error');
+            }
+        }
+
+        // 创建排行榜项目
+        function createLeaderboardItem(rank, player, score) {
+            const item = document.createElement('div');
+            item.className = 'leaderboard-item';
+            
+            let rankClass = '';
+            if (rank === 1) rankClass = 'gold';
+            else if (rank === 2) rankClass = 'silver';
+            else if (rank === 3) rankClass = 'bronze';
+            
+            const isCurrentUser = userAddress && player.toLowerCase() === userAddress.toLowerCase();
+            
+            item.innerHTML = `
+                <div class="rank ${rankClass}">#${rank}</div>
+                <div class="player-name">
+                    ${player.slice(0, 6)}...${player.slice(-4)}
+                    ${isCurrentUser ? ' (您)' : ''}
+                </div>
+                <div class="player-score">*** 分</div>
+            `;
+            
+            if (isCurrentUser) {
+                item.style.background = '#f0f8ff';
+                item.style.border = '2px solid #667eea';
+            }
+            
+            return item;
+        }
+
+        // 加载系统统计
+        async function loadSystemStats() {
+            if (!contract) return;
+
+            try {
+                const sessionCount = await contract.sessionCount();
+                const leaderboardSize = await contract.getLeaderboardSize();
+                
+                document.getElementById('totalSessions').textContent = sessionCount.toString();
+                document.getElementById('totalPlayers').textContent = leaderboardSize.toString();
+                
+                // 计算活跃会话数（简化实现）
+                let activeSessions = 0;
+                for (let i = 0; i < Math.min(sessionCount.toNumber(), 100); i++) {
+                    const session = await contract.getGameSession(i);
+                    if (session.isActive) activeSessions++;
+                }
+                document.getElementById('activeSessions').textContent = activeSessions.toString();
+                
+                // 总成就数（模拟数据）
+                document.getElementById('totalAchievements').textContent = '12';
+            } catch (error) {
+                console.error('加载系统统计失败:', error);
+            }
+        }
+
+        // 添加管理员
+        async function addAdmin() {
+            if (!contract || !isAdmin) {
+                showStatus('只有管理员可以添加其他管理员', 'error');
+                return;
+            }
+
+            const adminAddress = document.getElementById('adminAddress').value;
+            if (!adminAddress || !ethers.utils.isAddress(adminAddress)) {
+                showStatus('请输入有效的地址', 'error');
+                return;
+            }
+
+            try {
+                showStatus('正在添加管理员...', 'info');
+                
+                const tx = await contract.addAdmin(adminAddress);
+                await tx.wait();
+                
+                showStatus('管理员添加成功', 'success');
+                document.getElementById('adminAddress').value = '';
+            } catch (error) {
+                console.error('添加管理员失败:', error);
+                showStatus('添加管理员失败: ' + error.message, 'error');
+            }
+        }
+
+        // 解锁成就
+        async function unlockAchievement() {
+            if (!contract || !isAdmin) {
+                showStatus('只有管理员可以解锁成就', 'error');
+                return;
+            }
+
+            const playerAddress = document.getElementById('achievementPlayer').value;
+            const achievementName = document.getElementById('achievementName').value;
+            
+            if (!playerAddress || !ethers.utils.isAddress(playerAddress)) {
+                showStatus('请输入有效的玩家地址', 'error');
+                return;
+            }
+            
+            if (!achievementName) {
+                showStatus('请输入成就名称', 'error');
+                return;
+            }
+
+            try {
+                showStatus('正在解锁成就...', 'info');
+                
+                const tx = await contract.unlockAchievement(playerAddress, achievementName);
+                await tx.wait();
+                
+                showStatus('成就解锁成功', 'success');
+                document.getElementById('achievementPlayer').value = '';
+                document.getElementById('achievementName').value = '';
+            } catch (error) {
+                console.error('解锁成就失败:', error);
+                showStatus('解锁成就失败: ' + error.message, 'error');
+            }
+        }
+
+        // 切换标签页
+        function switchTab(tabName) {
+            // 隐藏所有标签内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // 移除所有标签的活跃状态
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 显示选中的标签内容
+            document.getElementById(tabName).classList.add('active');
+            
+            // 激活选中的标签
+            event.target.classList.add('active');
+        }
+
+        // 显示状态消息
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.classList.remove('hidden');
+            
+            setTimeout(() => {
+                statusDiv.classList.add('hidden');
+            }, 5000);
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            document.getElementById('connectWallet').addEventListener('click', connectWallet);
+            document.getElementById('startGame').addEventListener('click', startGame);
+            document.getElementById('submitScore').addEventListener('click', submitScore);
+            document.getElementById('endGame').addEventListener('click', endGame);
+            document.getElementById('loadSessions').addEventListener('click', loadSessions);
+            document.getElementById('loadLeaderboard').addEventListener('click', loadLeaderboard);
+            document.getElementById('addAdmin').addEventListener('click', addAdmin);
+            document.getElementById('unlockAchievement').addEventListener('click', unlockAchievement);
+
+            // 监听账户变化
+            if (window.ethereum) {
+                window.ethereum.on('accountsChanged', (accounts) => {
+                    if (accounts.length === 0) {
+                        location.reload();
+                    } else {
+                        location.reload();
+                    }
+                });
+
+                window.ethereum.on('chainChanged', () => {
+                    location.reload();
+                });
+            }
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+
+        // 全局函数，供HTML调用
+        window.switchTab = switchTab;
+    </script>
+</body>
+</html>
